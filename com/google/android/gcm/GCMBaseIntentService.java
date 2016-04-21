@@ -209,6 +209,11 @@ public abstract class GCMBaseIntentService extends IntentService {
             String action = intent.getAction();
 
             mLogger.log(Log.ERROR, "Received message [DEBUG]:" + intent.getAction() + " intent=" + intent);
+            for (String key : bundle.keySet())
+            {
+                Object value = bundle.get(key);
+                mLogger.log(Log.ERROR, String.format("%s %s (%s)", key,  value.toString(), value.getClass().getName()));
+            }
 
             if (action.equals(INTENT_FROM_GCM_REGISTRATION_CALLBACK))
             {
