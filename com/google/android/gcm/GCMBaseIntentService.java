@@ -251,11 +251,18 @@ public abstract class GCMBaseIntentService extends IntentService {
                     }
                     else
                     {
-                        // application is not using the latest GCM library
-                        mLogger.log(Log.ERROR,
-                                "Received unknown special message: %s",
-                                messageType);
-                        mLogger.log(Log.ERROR, "Received unknown special message(2):" + intent.getAction() + " intent=" + intent);
+                        if (messageType.equals("gcm")) // *** strange type ***
+                        {
+                            onMessage(context, intent);
+                        }
+                        else
+                        {
+                            // application is not using the latest GCM library
+                            mLogger.log(Log.ERROR,
+                                    "Received unknown special message: %s",
+                                    messageType);
+                            mLogger.log(Log.ERROR, "Received unknown special message(2):" + intent.getAction() + " intent=" + intent);
+                        }
                     }
                 }
                 else
