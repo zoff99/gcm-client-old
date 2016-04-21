@@ -99,22 +99,26 @@ public abstract class GCMBaseIntentService extends IntentService {
     /**
      * Constructor used when the sender id(s) is fixed.
      */
-    protected GCMBaseIntentService(String... senderIds) {
+    protected GCMBaseIntentService(String... senderIds)
+    {
         this(getName(senderIds), senderIds);
     }
 
-    private GCMBaseIntentService(String name, String[] senderIds) {
+    private GCMBaseIntentService(String name, String[] senderIds)
+    {
         super(name);  // name is used as base name for threads, etc.
         mSenderIds = senderIds;
         mLogger.log(Log.VERBOSE, "Intent service name: %s", name);
     }
 
-    private static String getName(String senderId) {
+    private static String getName(String senderId)
+    {
         String name = "GCMIntentService-" + senderId + "-" + (++sCounter);
         return name;
     }
 
-    private static String getName(String[] senderIds) {
+    private static String getName(String[] senderIds)
+    {
         String flatSenderIds = GCMRegistrar.getFlatSenderIds(senderIds);
         return getName(flatSenderIds);
     }
@@ -127,8 +131,10 @@ public abstract class GCMBaseIntentService extends IntentService {
      *
      * @throws IllegalStateException if sender id was not set on constructor.
      */
-    protected String[] getSenderIds(Context context) {
-        if (mSenderIds == null) {
+    protected String[] getSenderIds(Context context)
+    {
+        if (mSenderIds == null)
+        {
             throw new IllegalStateException("sender id not set on constructor");
         }
         return mSenderIds;
@@ -149,7 +155,8 @@ public abstract class GCMBaseIntentService extends IntentService {
      * @param context application's context.
      * @param total total number of collapsed messages
      */
-    protected void onDeletedMessages(Context context, int total) {
+    protected void onDeletedMessages(Context context, int total)
+    {
     }
 
     /**
@@ -164,7 +171,8 @@ public abstract class GCMBaseIntentService extends IntentService {
      * @return if {@literal true}, failed operation will be retried (using
      *         exponential backoff).
      */
-    protected boolean onRecoverableError(Context context, String errorId) {
+    protected boolean onRecoverableError(Context context, String errorId)
+    {
         return true;
     }
 
@@ -182,8 +190,7 @@ public abstract class GCMBaseIntentService extends IntentService {
      * @param context application's context.
      * @param registrationId the registration id returned by the GCM service.
      */
-    protected abstract void onRegistered(Context context,
-            String registrationId);
+    protected abstract void onRegistered(Context context, String registrationId);
 
     /**
      * Called after a device has been unregistered.
@@ -191,65 +198,91 @@ public abstract class GCMBaseIntentService extends IntentService {
      * @param registrationId the registration id that was previously registered.
      * @param context application's context.
      */
-    protected abstract void onUnregistered(Context context,
-            String registrationId);
+    protected abstract void onUnregistered(Context context, String registrationId);
 
     @Override
-    public final void onHandleIntent(Intent intent) {
-        try {
+    public final void onHandleIntent(Intent intent)
+    {
+        try
+        {
             Context context = getApplicationContext();
             String action = intent.getAction();
-            if (action.equals(INTENT_FROM_GCM_REGISTRATION_CALLBACK)) {
+
+            mLogger.log(Log.ERROR, "Received message [DEBUG]:" + intent.getAction() + " intent=" + intent);
+
+            if (action.equals(INTENT_FROM_GCM_REGISTRATION_CALLBACK))
+            {
                 GCMRegistrar.setRetryBroadcastReceiver(context);
                 handleRegistration(context, intent);
-            } else if (action.equals(INTENT_FROM_GCM_MESSAGE)) {
+            }
+            else if (action.equals(INTENT_FROM_GCM_MESSAGE))
+            {
                 // checks for special messages
-                String messageType =
-                        intent.getStringExtra(EXTRA_SPECIAL_MESSAGE);
-                if (messageType != null) {
-                    if (messageType.equals(VALUE_DELETED_MESSAGES)) {
-                        String sTotal =
-                                intent.getStringExtra(EXTRA_TOTAL_DELETED);
-                        if (sTotal != null) {
-                            try {
+                String messageType = intent.getStringExtra(EXTRA_SPECIAL_MESSAGE);
+                if (messageType != null)
+                {
+                    if (messageType.equals(VALUE_DELETED_MESSAGES))
+                    {
+                        String sTotal = intent.getStringExtra(EXTRA_TOTAL_DELETED);
+                        if (sTotal != null)
+                        {
+                            try
+                            {
                                 int total = Integer.parseInt(sTotal);
+
                                 mLogger.log(Log.VERBOSE,
                                         "Received notification for %d deleted"
                                         + "messages", total);
+
                                 onDeletedMessages(context, total);
-                            } catch (NumberFormatException e) {
+                            }
+                            catch (NumberFormatException e)
+                            {
                                 mLogger.log(Log.ERROR, "GCM returned invalid "
                                         + "number of deleted messages (%d)",
                                         sTotal);
                             }
                         }
-                    } else {
+                    }
+                    else
+                    {
                         // application is not using the latest GCM library
                         mLogger.log(Log.ERROR,
                                 "Received unknown special message: %s",
                                 messageType);
+                        mLogger.log(Log.ERROR, "Received unknown special message(2):" + intent.getAction() + " intent=" + intent);
                     }
-                } else {
+                }
+                else
+                {
                     onMessage(context, intent);
                 }
-            } else if (action.equals(INTENT_FROM_GCM_LIBRARY_RETRY)) {
+            }
+            else if (action.equals(INTENT_FROM_GCM_LIBRARY_RETRY))
+            {
                 String packageOnIntent = intent.getPackage();
                 if (packageOnIntent == null || !packageOnIntent.equals(
-                        getApplicationContext().getPackageName())) {
+                        getApplicationContext().getPackageName()))
+                        {
                     mLogger.log(Log.ERROR,
                             "Ignoring retry intent from another package (%s)",
                             packageOnIntent);
                     return;
                 }
                 // retry last call
-                if (GCMRegistrar.isRegistered(context)) {
+                if (GCMRegistrar.isRegistered(context))
+                {
                     GCMRegistrar.internalUnregister(context);
-                } else {
+                }
+                else
+                {
                     String[] senderIds = getSenderIds(context);
                     GCMRegistrar.internalRegister(context, senderIds);
                 }
             }
-        } finally {
+        }
+        finally
+        {
             // Release the power lock, so phone can get back to sleep.
             // The lock is reference-counted by default, so multiple
             // messages are ok.
